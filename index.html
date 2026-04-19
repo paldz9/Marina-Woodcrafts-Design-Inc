@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marina Woodcrafts Design Inc.</title>
+  <link rel="icon" type="image/png" href="Icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green:       #1d3328;
+      --green-mid:   #253f30;
+      --cream:       #f5f0e8;
+      --cream-dark:  #ede8df;
+      --muted:       #4f6358;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--green);
+      overflow-x: hidden;
+    }
+
+    /* ─────────────────────────────────────────
+       INTRO OVERLAY
+    ───────────────────────────────────────── */
+    body.intro-active { overflow: hidden; }
+
+    #intro-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    #intro-video {
+      width: 100vw;
+      height: auto;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    #intro-skip {
+      position: absolute;
+      bottom: 32px;
+      right: 40px;
+      z-index: 3;
+      background: transparent;
+      border: 1px solid rgba(0,0,0,0.2);
+      color: rgba(0,0,0,0.4);
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 8px 20px;
+      cursor: pointer;
+    }
+    #intro-skip:hover { opacity: 0.6; }
+
+    /* Door frame animation overlay — transparent PNGs over the website */
+    #door-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    /* flex:1 makes each bar grow to fill exactly the gap between the
+       viewport edge and the door image — no fixed heights, no overlap. */
+    .door-bar {
+      flex: 1;
+      width: 100%;
+      background: #ffffff; /* overwritten by JS with last video pixel colour */
+    }
+
+    #door-frame {
+      width: 100vw;
+      height: auto;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    /* ─────────────────────────────────────────
+       PARALLAX FOREGROUND LAYERS
+    ───────────────────────────────────────── */
+    .fg-layer {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-repeat: repeat-y;
+      background-size: 100% auto;
+      background-position: center top;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+      will-change: background-position;
+    }
+
+    /* small  = farthest  → slowest  (z 30) */
+    #fg-small  { background-image: url('foreground/small.png');  z-index: 30; opacity: 0.85; }
+    /* medium = middle    → medium   (z 31) */
+    #fg-medium { background-image: url('foreground/medium.png'); z-index: 31; opacity: 0.80; }
+    /* big    = nearest   → fastest  (z 32) */
+    #fg-big    { background-image: url('foreground/big.png');    z-index: 32; opacity: 0.75; }
+
+    /* ─────────────────────────────────────────
+       NAVBAR
+    ───────────────────────────────────────── */
+    #nav {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      z-index: 200;
+      padding: 28px 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.45s ease, padding 0.45s ease, backdrop-filter 0.45s ease;
+    }
+
+    #nav.scrolled {
+      background: rgba(29, 51, 40, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 16px 64px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .nav-icon {
+      height: 34px;
+      width: auto;
+      filter: brightness(0) invert(1);
+      opacity: 0.92;
+    }
+
+    .nav-wordmark {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(245, 240, 232, 0.9);
+      line-height: 1.3;
+    }
+
+    .nav-wordmark span {
+      display: block;
+      font-weight: 300;
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      opacity: 0.65;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 44px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: rgba(245, 240, 232, 0.82);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      transition: opacity 0.2s;
+    }
+    .nav-links a:hover { opacity: 0.5; }
+
+    /* ─────────────────────────────────────────
+       HERO
+    ───────────────────────────────────────── */
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      background: var(--green);
+      background-image: url('Background.jpg');
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    #hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--green);
+      opacity: 0.88;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 10;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero-logo {
+      width: 200px;
+      height: auto;
+      margin-bottom: 36px;
+      filter: brightness(0) invert(1);
+      opacity: 0.95;
+    }
+
+    .hero-eyebrow {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: rgba(245, 240, 232, 0.5);
+      margin-bottom: 22px;
+    }
+
+    .hero-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 7vw, 6rem);
+      font-weight: 400;
+      color: var(--cream);
+      line-height: 1.12;
+      letter-spacing: -0.01em;
+      margin-bottom: 28px;
+    }
+
+    .hero-headline em {
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .hero-sub {
+      font-size: clamp(0.8rem, 1.4vw, 0.95rem);
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      color: rgba(245, 240, 232, 0.6);
+      max-width: 480px;
+      line-height: 1.8;
+      margin-bottom: 48px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 14px 44px;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-outline-light {
+      background: transparent;
+      border: 1px solid rgba(245, 240, 232, 0.4);
+      color: var(--cream);
+    }
+    .btn-outline-light:hover {
+      background: rgba(245, 240, 232, 0.1);
+      border-color: rgba(245, 240, 232, 0.8);
+    }
+
+    .btn-solid {
+      background: var(--green);
+      color: var(--cream);
+      border: 1px solid var(--green);
+    }
+    .btn-solid:hover {
+      background: var(--green-mid);
+      border-color: var(--green-mid);
+    }
+
+    .btn-outline-dark {
+      background: transparent;
+      border: 1px solid rgba(29, 51, 40, 0.35);
+      color: var(--green);
+    }
+    .btn-outline-dark:hover {
+      background: var(--green);
+      color: var(--cream);
+      border-color: var(--green);
+    }
+
+    .scroll-cue {
+      position: absolute;
+      bottom: 44px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: rgba(245, 240, 232, 0.35);
+      font-size: 8px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+    }
+
+    .scroll-cue-line {
+      width: 1px;
+      height: 52px;
+      background: linear-gradient(to bottom, rgba(245,240,232,0.5), transparent);
+      animation: cueDown 2s ease-in-out infinite;
+    }
+
+    @keyframes cueDown {
+      0%   { transform: scaleY(0); transform-origin: top; opacity: 0; }
+      40%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+      41%  { transform-origin: bottom; }
+      100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+    }
+
+    /* ─────────────────────────────────────────
+       SHARED SECTION
+    ───────────────────────────────────────── */
+    .section { position: relative; z-index: 10; }
+
+    .wrap {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 130px 64px;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.55;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4.5vw, 3.8rem);
+      font-weight: 400;
+      line-height: 1.18;
+      color: var(--green);
+    }
+
+    .section-title-light { color: var(--cream); }
+    .eyebrow-light { color: rgba(245,240,232,0.45); opacity: 1; }
+
+    /* ─────────────────────────────────────────
+       ABOUT
+    ───────────────────────────────────────── */
+    #about { background: var(--cream); }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 90px;
+      align-items: center;
+      margin-top: 64px;
+    }
+
+    .about-body p {
+      font-size: 1rem;
+      line-height: 1.9;
+      color: var(--muted);
+      margin-bottom: 22px;
+    }
+
+    .about-img {
+      position: relative;
+      aspect-ratio: 5/4;
+      background: var(--green);
+      overflow: hidden;
+    }
+
+    .about-img::after {
+      content: '';
+      position: absolute;
+      inset: 16px 0 0 16px;
+      border: 1px solid rgba(29,51,40,0.18);
+      pointer-events: none;
+    }
+
+    .about-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      mix-blend-mode: multiply;
+      filter: sepia(0.2) brightness(0.65);
+    }
+
+    .about-stats {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 40px;
+      margin-top: 80px;
+      padding-top: 64px;
+      border-top: 1px solid rgba(29,51,40,0.12);
+    }
+
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 3.2rem;
+      font-weight: 400;
+      color: var(--green);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    /* ─────────────────────────────────────────
+       SERVICES
+    ───────────────────────────────────────── */
+    #services { background: var(--cream-dark); }
+
+    .services-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 32px;
+      margin-bottom: 64px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+    }
+
+    .service-card {
+      background: var(--cream);
+      padding: 52px 42px;
+      cursor: default;
+      transition: background 0.35s, color 0.35s;
+    }
+
+    .service-card:hover { background: var(--green); }
+
+    .svc-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: rgba(29,51,40,0.2);
+      margin-bottom: 32px;
+      transition: color 0.35s;
+    }
+    .service-card:hover .svc-num { color: rgba(245,240,232,0.25); }
+
+    .svc-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.45rem;
+      font-weight: 500;
+      color: var(--green);
+      margin-bottom: 14px;
+      transition: color 0.35s;
+    }
+    .service-card:hover .svc-title { color: var(--cream); }
+
+    .svc-desc {
+      font-size: 0.88rem;
+      line-height: 1.8;
+      color: var(--muted);
+      transition: color 0.35s;
+    }
+    .service-card:hover .svc-desc { color: rgba(245,240,232,0.65); }
+
+    /* ─────────────────────────────────────────
+       GALLERY
+    ───────────────────────────────────────── */
+    #gallery { background: var(--green); }
+
+    .gallery-meta {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 32px;
+      margin-bottom: 64px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: 320px 260px;
+      gap: 2px;
+    }
+
+    .g-item {
+      background: rgba(245,240,232,0.06);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s;
+      cursor: pointer;
+    }
+
+    .g-item:hover { background: rgba(245,240,232,0.11); }
+
+    .g-item:first-child {
+      grid-column: span 2;
+    }
+
+    .g-placeholder {
+      font-size: 9px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.18);
+      pointer-events: none;
+    }
+
+    /* ─────────────────────────────────────────
+       CONTACT
+    ───────────────────────────────────────── */
+    #contact { background: var(--cream); }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 100px;
+      margin-top: 64px;
+    }
+
+    .contact-info p {
+      font-size: 0.95rem;
+      line-height: 1.9;
+      color: var(--muted);
+      margin-bottom: 44px;
+    }
+
+    .cinfo-item { margin-bottom: 26px; }
+
+    .cinfo-label {
+      font-size: 9px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--muted);
+      opacity: 0.5;
+      margin-bottom: 5px;
+    }
+
+    .cinfo-value {
+      font-size: 0.95rem;
+      color: var(--green);
+      font-weight: 400;
+    }
+
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 8px; }
+
+    .field label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(29,51,40,0.45);
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      color: var(--green);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(29,51,40,0.22);
+      padding: 10px 0;
+      outline: none;
+      transition: border-color 0.25s;
+      -webkit-appearance: none;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus { border-color: var(--green); }
+
+    .field textarea { resize: none; height: 90px; }
+
+    /* ─────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────── */
+    footer {
+      position: relative;
+      z-index: 10;
+      background: var(--green);
+      padding: 52px 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-icon {
+      height: 30px;
+      filter: brightness(0) invert(1);
+      opacity: 0.6;
+    }
+
+    .footer-name {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.55);
+    }
+
+    .footer-copy {
+      font-size: 10px;
+      color: rgba(245,240,232,0.3);
+      letter-spacing: 0.06em;
+    }
+
+    /* ─────────────────────────────────────────
+       SCROLL REVEAL
+    ───────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    /* ─────────────────────────────────────────
+       DIVIDER
+    ───────────────────────────────────────── */
+    .line-divider {
+      width: 40px;
+      height: 1px;
+      background: rgba(29,51,40,0.25);
+      margin: 20px 0 0;
+    }
+
+    .line-divider-light {
+      background: rgba(245,240,232,0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════
+       INTRO OVERLAY
+  ═══════════════════════════════════════ -->
+  <div id="intro-overlay">
+    <video id="intro-video" muted playsinline preload="auto">
+      <source src="Intro%20Animation/intro.aep_AME/Intro_v3.mp4" type="video/mp4" />
+    </video>
+    <button id="intro-skip">Skip</button>
+  </div>
+
+  <!-- Door animation overlay — shown after video ends, above the website -->
+  <div id="door-overlay">
+    <div class="door-bar" id="door-bar-top"></div>
+    <img id="door-frame" src="" alt="" />
+    <div class="door-bar" id="door-bar-bottom"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       PARALLAX FOREGROUND LAYERS
+       mix-blend-mode: multiply makes the
+       white BG invisible; only the dark
+       speckles overlay the content.
+  ═══════════════════════════════════════ -->
+  <div class="fg-layer" id="fg-small"></div>
+  <div class="fg-layer" id="fg-medium"></div>
+  <div class="fg-layer" id="fg-big"></div>
+
+  <!-- ═══════════════════════════════════════
+       NAVIGATION
+  ═══════════════════════════════════════ -->
+  <nav id="nav">
+    <a href="#hero" class="nav-brand">
+      <img src="Icon.png" alt="MW" class="nav-icon" />
+      <div class="nav-wordmark">
+        Marina Woodcrafts
+        <span>Design Inc.</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#gallery">Gallery</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- ═══════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════ -->
+  <section id="hero">
+    <div class="hero-inner">
+      <img
+        src="Icon.png"
+        alt="Marina Woodcrafts"
+        class="hero-logo"
+      />
+      <p class="hero-eyebrow">Handcrafted with Purpose</p>
+      <h1 class="hero-headline">
+        Where Wood<br />Becomes <em>Art</em>
+      </h1>
+      <p class="hero-sub">
+        Custom woodcraft and interior design rooted in tradition,<br />
+        crafted for the spaces where life happens.
+      </p>
+      <a href="#about" class="btn btn-outline-light">Discover Our Work</a>
+    </div>
+    <div class="scroll-cue">
+      <span>Scroll</span>
+      <div class="scroll-cue-line"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       ABOUT
+  ═══════════════════════════════════════ -->
+  <section id="about" class="section">
+    <div class="wrap">
+      <p class="eyebrow reveal">Our Story</p>
+      <h2 class="section-title reveal">
+        Crafted with tradition,<br />designed for today.
+      </h2>
+      <div class="line-divider reveal"></div>
+
+      <div class="about-grid">
+        <div class="about-body">
+          <p class="reveal reveal-delay-1">
+            Marina Woodcrafts Design Inc. was founded on a simple belief —
+            that every piece of wood carries a story waiting to be told.
+            Through skilled hands and thoughtful design, we transform raw
+            timber into enduring works of functional art.
+          </p>
+          <p class="reveal reveal-delay-2">
+            From bespoke furniture to full architectural woodwork, each piece
+            is crafted with meticulous attention to grain, form, and finish —
+            built not just for today, but for generations to come.
+          </p>
+          <a href="#services" class="btn btn-solid reveal reveal-delay-3" style="margin-top: 12px;">
+            Our Services
+          </a>
+        </div>
+        <div class="about-img reveal reveal-delay-1">
+          <img src="Dots-Frontground.png" alt="Marina Woodcrafts Studio" />
+        </div>
+      </div>
+
+      <div class="about-stats">
+        <div class="reveal">
+          <div class="stat-num">15+</div>
+          <div class="stat-label">Years of Experience</div>
+        </div>
+        <div class="reveal reveal-delay-1">
+          <div class="stat-num">800+</div>
+          <div class="stat-label">Projects Completed</div>
+        </div>
+        <div class="reveal reveal-delay-2">
+          <div class="stat-num">100%</div>
+          <div class="stat-label">Handcrafted</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       SERVICES
+  ═══════════════════════════════════════ -->
+  <section id="services" class="section">
+    <div class="wrap">
+      <div class="services-header">
+        <div>
+          <p class="eyebrow reveal">What We Do</p>
+          <h2 class="section-title reveal">
+            Craftsmanship in<br />every detail.
+          </h2>
+        </div>
+        <a href="#contact" class="btn btn-outline-dark reveal">Start a Project</a>
+      </div>
+
+      <div class="services-grid">
+        <div class="service-card reveal">
+          <div class="svc-num">01</div>
+          <h3 class="svc-title">Custom Furniture</h3>
+          <p class="svc-desc">
+            Bespoke tables, chairs, cabinets, and shelving — designed around your space
+            and crafted to your exact specifications.
+          </p>
+        </div>
+        <div class="service-card reveal reveal-delay-1">
+          <div class="svc-num">02</div>
+          <h3 class="svc-title">Architectural Woodwork</h3>
+          <p class="svc-desc">
+            Doors, panels, staircases, and ceilings that bring warmth and character
+            to residential and commercial interiors.
+          </p>
+        </div>
+        <div class="service-card reveal reveal-delay-2">
+          <div class="svc-num">03</div>
+          <h3 class="svc-title">Interior Design</h3>
+          <p class="svc-desc">
+            Full-service design consultation — from concept to completion, creating
+            cohesive wood-centric interiors with lasting impact.
+          </p>
+        </div>
+        <div class="service-card reveal reveal-delay-1">
+          <div class="svc-num">04</div>
+          <h3 class="svc-title">Wood Restoration</h3>
+          <p class="svc-desc">
+            Breathing new life into heirloom pieces and heritage structures with
+            careful, respectful restoration techniques.
+          </p>
+        </div>
+        <div class="service-card reveal reveal-delay-2">
+          <div class="svc-num">05</div>
+          <h3 class="svc-title">Decorative Carvings</h3>
+          <p class="svc-desc">
+            Hand-carved ornaments, reliefs, and artistic pieces — each one a
+            unique expression of natural beauty.
+          </p>
+        </div>
+        <div class="service-card reveal reveal-delay-3">
+          <div class="svc-num">06</div>
+          <h3 class="svc-title">Commercial Fitouts</h3>
+          <p class="svc-desc">
+            Retail displays, restaurant interiors, and office woodwork — built
+            for durability, designed for impression.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       GALLERY
+  ═══════════════════════════════════════ -->
+  <section id="gallery" class="section">
+    <div class="wrap">
+      <div class="gallery-meta">
+        <div>
+          <p class="eyebrow eyebrow-light reveal">Portfolio</p>
+          <h2 class="section-title section-title-light reveal">Our Work</h2>
+          <div class="line-divider line-divider-light reveal"></div>
+        </div>
+        <a href="#contact" class="btn btn-outline-light reveal">Commission a Piece</a>
+      </div>
+
+      <div class="gallery-grid">
+        <div class="g-item reveal">
+          <span class="g-placeholder">Featured Project</span>
+        </div>
+        <div class="g-item reveal reveal-delay-1">
+          <span class="g-placeholder">Project</span>
+        </div>
+        <div class="g-item reveal reveal-delay-1">
+          <span class="g-placeholder">Project</span>
+        </div>
+        <div class="g-item reveal reveal-delay-2">
+          <span class="g-placeholder">Project</span>
+        </div>
+        <div class="g-item reveal reveal-delay-3">
+          <span class="g-placeholder">Project</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       CONTACT
+  ═══════════════════════════════════════ -->
+  <section id="contact" class="section">
+    <div class="wrap">
+      <p class="eyebrow reveal">Get in Touch</p>
+      <h2 class="section-title reveal">
+        Let's build something<br />beautiful together.
+      </h2>
+      <div class="line-divider reveal"></div>
+
+      <div class="contact-grid">
+        <div class="contact-info">
+          <p class="reveal reveal-delay-1">
+            Whether you have a clear vision or just a feeling, we'd love to
+            hear from you. Our team is ready to bring your woodcraft ideas to
+            life — from the first sketch to the final finish.
+          </p>
+          <div class="cinfo-item reveal reveal-delay-2">
+            <div class="cinfo-label">Email</div>
+            <div class="cinfo-value">hello@marinawoodcrafts.com</div>
+          </div>
+          <div class="cinfo-item reveal reveal-delay-3">
+            <div class="cinfo-label">Phone</div>
+            <div class="cinfo-value">+63 912 345 6789</div>
+          </div>
+          <div class="cinfo-item reveal reveal-delay-4">
+            <div class="cinfo-label">Studio</div>
+            <div class="cinfo-value">Manila, Philippines</div>
+          </div>
+        </div>
+
+        <form class="contact-form reveal reveal-delay-1" onsubmit="handleSubmit(event)">
+          <div class="field">
+            <label for="name">Your Name</label>
+            <input id="name" type="text" placeholder="Full name" required />
+          </div>
+          <div class="field">
+            <label for="email">Email Address</label>
+            <input id="email" type="email" placeholder="you@email.com" required />
+          </div>
+          <div class="field">
+            <label for="service">Service of Interest</label>
+            <select id="service">
+              <option value="">Select a service…</option>
+              <option>Custom Furniture</option>
+              <option>Architectural Woodwork</option>
+              <option>Interior Design</option>
+              <option>Wood Restoration</option>
+              <option>Decorative Carvings</option>
+              <option>Commercial Fitouts</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" placeholder="Tell us about your project…" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-solid" style="align-self: flex-start;">
+            Send Message
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════ -->
+  <footer>
+    <div class="footer-brand">
+      <img src="Icon.png" alt="MW" class="footer-icon" />
+      <span class="footer-name">Marina Woodcrafts</span>
+    </div>
+    <p class="footer-copy">© 2025 Marina Woodcrafts Design Inc. All rights reserved.</p>
+  </footer>
+
+  <!-- ═══════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════ -->
+  <script>
+    // ── Intro overlay ───────────────────────────────────────────
+    (function () {
+      const overlay    = document.getElementById('intro-overlay');
+      const video      = document.getElementById('intro-video');
+      const skipBtn    = document.getElementById('intro-skip');
+      const doorOverlay = document.getElementById('door-overlay');
+      const doorFrame   = document.getElementById('door-frame');
+
+      document.body.classList.add('intro-active');
+
+      // ── Preload all 15 door frames ─────────────────────────────
+      const DOOR_COUNT   = 15;
+      const MS_PER_FRAME = 1000 / 12; // 12 fps
+      const doorSrcs = Array.from({ length: DOOR_COUNT }, (_, i) => {
+        const n = String(i).padStart(5, '0');
+        return `Intro%20Animation/intro.aep_AME/Door/Door_${n}.png`;
+      });
+      doorSrcs.forEach(src => { const img = new Image(); img.src = src; });
+
+      // ── Pixel sampler: top-left pixel → overlay background ─────
+      const canvas = document.createElement('canvas');
+      canvas.width = 1; canvas.height = 1;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      let sampling = false;
+
+      function sampleTopLeft() {
+        if (!sampling) return;
+        try {
+          ctx.drawImage(video, 0, 0, 1, 1, 0, 0, 1, 1);
+          const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+          overlay.style.background = `rgb(${r},${g},${b})`;
+        } catch (_) {}
+        requestAnimationFrame(sampleTopLeft);
+      }
+
+      // ── Door animation ─────────────────────────────────────────
+      function startDoors() {
+        // Paint bars with the last colour sampled from the video so the
+        // letterbox gaps above/below the PNG match the intro seamlessly
+        const barColor = overlay.style.background || '#ffffff';
+        document.getElementById('door-bar-top').style.background    = barColor;
+        document.getElementById('door-bar-bottom').style.background = barColor;
+
+        // Show first frame before removing intro overlay (no flash)
+        doorFrame.src = doorSrcs[0];
+        doorOverlay.style.display = 'flex';
+
+        // Remove intro overlay — website is now visible under doors
+        overlay.remove();
+        document.body.classList.remove('intro-active');
+
+        let idx = 1;
+        const tick = setInterval(() => {
+          if (idx >= DOOR_COUNT) {
+            clearInterval(tick);
+            doorOverlay.remove();
+            return;
+          }
+          doorFrame.src = doorSrcs[idx++];
+        }, MS_PER_FRAME);
+      }
+
+      // ── Dismiss: stop video, start doors ──────────────────────
+      let dismissed = false;
+      function dismiss() {
+        if (dismissed) return;
+        dismissed = true;
+        sampling = false;
+        video.pause();
+        startDoors();
+      }
+
+      // ── Trigger dismiss when video ends ───────────────────────
+      video.addEventListener('ended', dismiss);
+      video.addEventListener('loadedmetadata', () => {
+        setTimeout(dismiss, video.duration * 1000);
+      });
+
+      // Start pixel sampler once frames are available
+      video.addEventListener('canplay', () => {
+        if (!sampling) { sampling = true; requestAnimationFrame(sampleTopLeft); }
+      });
+
+      // Autoplay; if blocked make overlay a click-to-start target
+      video.play().catch(() => {
+        overlay.style.cursor = 'pointer';
+        overlay.addEventListener('click', () => {
+          overlay.style.cursor = '';
+          video.play().catch(dismiss);
+        }, { once: true });
+      });
+
+      video.addEventListener('error', dismiss);
+      skipBtn.addEventListener('click', dismiss);
+    })();
+
+    // ── Parallax foreground layers ──────────────────────────────
+    // Each layer uses background-repeat: repeat-y, so
+    // incrementing backgroundPositionY loops seamlessly.
+    // Speed hierarchy: small (far/slow) → medium → big (near/fast)
+
+    const fgSmall  = document.getElementById('fg-small');
+    const fgMedium = document.getElementById('fg-medium');
+    const fgBig    = document.getElementById('fg-big');
+
+    const SPEED_SMALL  = 0.07;   // farthest — barely moves
+    const SPEED_MEDIUM = 0.17;   // mid-depth
+    const SPEED_BIG    = 0.30;   // nearest — most movement
+
+    let ticking = false;
+
+    function updateParallax() {
+      const y = window.scrollY;
+      fgSmall.style.backgroundPositionY  = (-y * SPEED_SMALL)  + 'px';
+      fgMedium.style.backgroundPositionY = (-y * SPEED_MEDIUM) + 'px';
+      fgBig.style.backgroundPositionY    = (-y * SPEED_BIG)    + 'px';
+      ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(updateParallax);
+        ticking = true;
+      }
+    }, { passive: true });
+
+    updateParallax();
+
+    // ── Navbar scroll state ──────────────────────────────────────
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 70);
+    }, { passive: true });
+
+    // ── Scroll reveal (IntersectionObserver) ────────────────────
+    const revealEls = document.querySelectorAll('.reveal');
+    const revealObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      });
+    }, { threshold: 0.12 });
+
+    revealEls.forEach(el => revealObs.observe(el));
+
+    // ── Contact form ─────────────────────────────────────────────
+    function handleSubmit(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('[type="submit"]');
+      btn.textContent = 'Message Sent';
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+    }
+  </script>
+</body>
+</html>
